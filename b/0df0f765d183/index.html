@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Handkerchief Near the Edge</title>
+<meta name="description" content="2 models built this in mcbench-lite. Switch between them and drag to look around.">
+<meta name="twitter:card" content="player">
+<meta name="twitter:title" content="Handkerchief Near the Edge">
+<meta name="twitter:description" content="2 models built this in mcbench-lite. Switch between them and drag to look around.">
+<meta name="twitter:image" content="https://adonis-singh.github.io/mcbench-builds/b/0df0f765d183/preview.jpg">
+<meta name="twitter:player" content="https://adonis-singh.github.io/mcbench-builds/b/0df0f765d183/">
+<meta name="twitter:player:width" content="480">
+<meta name="twitter:player:height" content="480">
+<meta property="og:title" content="Handkerchief Near the Edge">
+<meta property="og:description" content="2 models built this in mcbench-lite. Switch between them and drag to look around.">
+<meta property="og:image" content="https://adonis-singh.github.io/mcbench-builds/b/0df0f765d183/preview.jpg">
+<meta property="og:url" content="https://adonis-singh.github.io/mcbench-builds/b/0df0f765d183/">
+<meta property="og:type" content="website">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#7dabff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+#viewer{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+#cover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;text-align:center;background:#16181d;color:#e8e6e1;transition:opacity .3s}
+#cover.shown{opacity:0;pointer-events:none}
+#cover.failed{color:#ffb4a8}
+#full{position:fixed;right:8px;bottom:8px;padding:4px 9px;border-radius:6px;background:rgba(12,12,12,.7);color:#f2efe8;font-size:12px;text-decoration:none}
+#full:hover{background:rgba(12,12,12,.9)}
+#progress{position:fixed;left:0;right:0;bottom:0;height:3px;background:rgba(12,12,12,.25);pointer-events:none}
+#progress>div{height:100%;width:0;background:#f2efe8;transition:width .2s}
+#progress>span{position:absolute;left:8px;bottom:8px;padding:2px 7px;border-radius:5px;background:rgba(12,12,12,.55);color:#f2efe8;font-size:11px}
+#builds{position:fixed;top:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none}
+#builds>div{display:flex;align-items:center;gap:2px;max-width:100%;padding:3px;box-sizing:border-box;border-radius:8px;background:rgba(12,12,12,.7);pointer-events:auto}
+#pills{position:relative;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;min-width:0}
+#pills::-webkit-scrollbar{display:none}
+#builds button{flex:none;border:0;margin:0;font:inherit;font-size:12px;line-height:18px;color:#f2efe8;background:transparent;cursor:pointer;border-radius:5px}
+#builds button:focus-visible{outline:2px solid #f2efe8;outline-offset:-2px}
+#builds .pill{padding:3px 10px;white-space:nowrap;background:rgba(255,255,255,.08)}
+#builds .pill:hover{background:rgba(255,255,255,.18)}
+#builds .pill[aria-pressed="true"]{background:#f2efe8;color:#16181d;font-weight:600}
+#prev,#next{width:26px;padding:3px 0;font-size:17px!important}
+#prev:disabled,#next:disabled{opacity:.35;cursor:default}
+</style>
+</head>
+<body>
+<iframe id="viewer" src="../../viewer/41cdf4a4b9c9e90c/?build=../../b/0df0f765d183/build.json" title="Handkerchief Near the Edge" allow="fullscreen"></iframe>
+<div id="cover" role="status">Loading the build…</div>
+<div id="progress" role="progressbar" hidden><div></div><span></span></div>
+<a id="full" href="./" target="_blank" rel="noopener">Open full screen</a>
+<nav id="builds" aria-label="Builds"><div><button type="button" id="prev" aria-label="Previous build">&lsaquo;</button><div id="pills"><button type="button" class="pill" data-index="0" aria-pressed="true">claude-fable-5-2</button><button type="button" class="pill" data-index="1" aria-pressed="false">gpt-6-astra</button></div><button type="button" id="next" aria-label="Next build">&rsaquo;</button></div></nav>
+<script>
+(function () {
+  var frame = document.getElementById('viewer');
+  var cover = document.getElementById('cover');
+  var progress = document.getElementById('progress');
+  // The strip's pills, one per build (none for a share of one build).
+  var pills = Array.prototype.slice.call(document.querySelectorAll('#builds .pill'));
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  // The build asked for: what the bridge tells of any other is ignored.
+  var wanted = 0;
+  // Whether a build has been on screen: the cover is for the first load.
+  var seen = false;
+  // Opened on its own, the page is already the full screen.
+  if (window.top === window) document.getElementById('full').hidden = true;
+  function failed(index, text) {
+    cover.className = 'failed';
+    cover.textContent = (pills.length ? pills[index].textContent : 'The build') + ' could not be shown: ' + text;
+    progress.hidden = true;
+  }
+  function line(drawn, total, text) {
+    progress.hidden = false;
+    progress.firstChild.style.width = (total ? 100 * drawn / total : 0) + '%';
+    progress.lastChild.textContent = text;
+  }
+  // Highlights the pill of build index, scrolls it into the strip's view (the strip
+  // alone: scrolling the page would scroll a post around X's frame) and
+  // asks the bridge for that build; the bottom line says it is loading.
+  function choose(index) {
+    if (index === wanted) return;
+    wanted = index;
+    mark();
+    if (!seen || cover.className === 'failed') {
+      cover.className = '';
+      cover.textContent = 'Loading ' + pills[index].textContent + '…';
+    }
+    line(0, 0, 'Loading ' + pills[index].textContent + '…');
+    frame.contentWindow.postMessage({ type: 'mcbench-share:show', index: index }, window.location.origin);
+  }
+  function mark() {
+    pills.forEach(function (pill, index) { pill.setAttribute('aria-pressed', String(index === wanted)); });
+    prev.disabled = wanted === 0;
+    next.disabled = wanted === pills.length - 1;
+    var strip = pills[wanted].parentNode;
+    var pill = pills[wanted];
+    if (pill.offsetLeft < strip.scrollLeft) strip.scrollLeft = pill.offsetLeft;
+    else if (pill.offsetLeft + pill.offsetWidth > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = pill.offsetLeft + pill.offsetWidth - strip.clientWidth;
+  }
+  if (pills.length) {
+    pills.forEach(function (pill, index) { pill.addEventListener('click', function () { choose(index); }); });
+    prev.addEventListener('click', function () { if (wanted > 0) choose(wanted - 1); });
+    next.addEventListener('click', function () { if (wanted < pills.length - 1) choose(wanted + 1); });
+    // While the page has focus (the viewer takes the keys once clicked).
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowLeft' && wanted > 0) choose(wanted - 1);
+      else if (event.key === 'ArrowRight' && wanted < pills.length - 1) choose(wanted + 1);
+      else return;
+      event.preventDefault();
+    });
+    mark();
+  }
+  // The share bridge says when the build is on screen or why it is not. A
+  // viewer that never says (its page or BlueMap did not load) is a failure too.
+  var silence = setTimeout(function () { failed(wanted, 'the viewer did not load.'); }, 60000);
+  window.addEventListener('message', function (event) {
+    if (event.source !== frame.contentWindow || event.origin !== window.location.origin) return;
+    clearTimeout(silence);
+    if (event.data.index !== wanted) return;
+    if (event.data.type === 'mcbench-share:shown') {
+      seen = true;
+      cover.className = 'shown';
+    }
+    if (event.data.type === 'mcbench-share:failed') failed(event.data.index, event.data.error);
+    // A line along the bottom while tiles are still being drawn.
+    if (event.data.type === 'mcbench-share:progress') {
+      line(event.data.drawn, event.data.total, 'Drawing ' + event.data.drawn + ' of ' + event.data.total);
+      progress.hidden = event.data.drawn === event.data.total;
+    }
+  });
+})();
+</script>
+</body>
+</html>
