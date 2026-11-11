@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Giant Rubber Duck</title>
+<meta name="description" content="Built by claude-opus-5-5 in mcbench-lite. Drag to look around.">
+<meta name="twitter:card" content="player">
+<meta name="twitter:title" content="Giant Rubber Duck">
+<meta name="twitter:description" content="Built by claude-opus-5-5 in mcbench-lite. Drag to look around.">
+<meta name="twitter:image" content="https://adonis-singh.github.io/mcbench-builds/b/d36f4e2d933e/preview.jpg">
+<meta name="twitter:player" content="https://adonis-singh.github.io/mcbench-builds/b/d36f4e2d933e/">
+<meta name="twitter:player:width" content="480">
+<meta name="twitter:player:height" content="480">
+<meta property="og:title" content="Giant Rubber Duck">
+<meta property="og:description" content="Built by claude-opus-5-5 in mcbench-lite. Drag to look around.">
+<meta property="og:image" content="https://adonis-singh.github.io/mcbench-builds/b/d36f4e2d933e/preview.jpg">
+<meta property="og:url" content="https://adonis-singh.github.io/mcbench-builds/b/d36f4e2d933e/">
+<meta property="og:type" content="website">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#7dabff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+#viewer{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+#cover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;text-align:center;background:#16181d;color:#e8e6e1;transition:opacity .3s}
+#cover.shown{opacity:0;pointer-events:none}
+#cover.failed{color:#ffb4a8}
+#full{position:fixed;right:8px;bottom:8px;padding:4px 9px;border-radius:6px;background:rgba(12,12,12,.7);color:#f2efe8;font-size:12px;text-decoration:none}
+#full:hover{background:rgba(12,12,12,.9)}
+#progress{position:fixed;left:0;right:0;bottom:0;height:3px;background:rgba(12,12,12,.25);pointer-events:none}
+#progress>div{height:100%;width:0;background:#f2efe8;transition:width .2s}
+#progress>span{position:absolute;left:8px;bottom:8px;padding:2px 7px;border-radius:5px;background:rgba(12,12,12,.55);color:#f2efe8;font-size:11px}
+</style>
+</head>
+<body>
+<iframe id="viewer" src="../../viewer/38c266f0eb110df1/?build=../../b/d36f4e2d933e/build.json" title="Giant Rubber Duck" allow="fullscreen"></iframe>
+<div id="cover" role="status">Loading the build…</div>
+<div id="progress" role="progressbar" hidden><div></div><span></span></div>
+<a id="full" href="./" target="_blank" rel="noopener">Open full screen</a>
+<script>
+(function () {
+  var frame = document.getElementById('viewer');
+  var cover = document.getElementById('cover');
+  // Opened on its own, the page is already the full screen.
+  if (window.top === window) document.getElementById('full').hidden = true;
+  function failed(text) {
+    cover.className = 'failed';
+    cover.textContent = 'The build could not be shown: ' + text;
+  }
+  // The share bridge says when the build is on screen or why it is not. A
+  // viewer that never says (its page or BlueMap did not load) is a failure too.
+  var silence = setTimeout(function () { failed('the viewer did not load.'); }, 60000);
+  window.addEventListener('message', function (event) {
+    if (event.source !== frame.contentWindow || event.origin !== window.location.origin) return;
+    clearTimeout(silence);
+    if (event.data.type === 'mcbench-share:shown') cover.className = 'shown';
+    if (event.data.type === 'mcbench-share:failed') failed(event.data.error);
+    // A line along the bottom while tiles are still being drawn.
+    if (event.data.type === 'mcbench-share:progress') {
+      var progress = document.getElementById('progress');
+      progress.hidden = event.data.drawn === event.data.total;
+      progress.firstChild.style.width = (100 * event.data.drawn / event.data.total) + '%';
+      progress.lastChild.textContent = 'Drawing ' + event.data.drawn + ' of ' + event.data.total;
+    }
+  });
+})();
+</script>
+</body>
+</html>
